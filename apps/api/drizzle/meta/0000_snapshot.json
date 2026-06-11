@@ -1,0 +1,312 @@
+{
+  "id": "1a3509e1-3215-4b82-b8b2-cffad9514378",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.decision_layers": {
+      "name": "decision_layers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "render_order": {
+          "name": "render_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "restricted": {
+          "name": "restricted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "required_role": {
+          "name": "required_role",
+          "type": "user_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.default_selected_layers": {
+      "name": "default_selected_layers",
+      "schema": "",
+      "columns": {
+        "layer_id": {
+          "name": "layer_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "render_order": {
+          "name": "render_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "default_selected_layers_layer_id_decision_layers_id_fk": {
+          "name": "default_selected_layers_layer_id_decision_layers_id_fk",
+          "tableFrom": "default_selected_layers",
+          "tableTo": "decision_layers",
+          "columnsFrom": ["layer_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.map_feature_coordinates": {
+      "name": "map_feature_coordinates",
+      "schema": "",
+      "columns": {
+        "feature_id": {
+          "name": "feature_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lon": {
+          "name": "lon",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lat": {
+          "name": "lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "map_feature_coordinates_feature_id_map_features_id_fk": {
+          "name": "map_feature_coordinates_feature_id_map_features_id_fk",
+          "tableFrom": "map_feature_coordinates",
+          "tableTo": "map_features",
+          "columnsFrom": ["feature_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "map_feature_coordinates_feature_id_position_pk": {
+          "name": "map_feature_coordinates_feature_id_position_pk",
+          "columns": ["feature_id", "position"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.map_features": {
+      "name": "map_features",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "layer_id": {
+          "name": "layer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "geometry_type": {
+          "name": "geometry_type",
+          "type": "map_geometry_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "map_features_layer_id_decision_layers_id_fk": {
+          "name": "map_features_layer_id_decision_layers_id_fk",
+          "tableFrom": "map_features",
+          "tableTo": "decision_layers",
+          "columnsFrom": ["layer_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.search_targets": {
+      "name": "search_targets",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "search_target_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lon": {
+          "name": "lon",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lat": {
+          "name": "lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "zoom": {
+          "name": "zoom",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "municipality": {
+          "name": "municipality",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source": {
+          "name": "source",
+          "type": "search_target_source",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.workbench_settings": {
+      "name": "workbench_settings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "default_search_target_id": {
+          "name": "default_search_target_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "workbench_settings_default_search_target_id_search_targets_id_fk": {
+          "name": "workbench_settings_default_search_target_id_search_targets_id_fk",
+          "tableFrom": "workbench_settings",
+          "tableTo": "search_targets",
+          "columnsFrom": ["default_search_target_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.map_geometry_type": {
+      "name": "map_geometry_type",
+      "schema": "public",
+      "values": ["polygon", "line-string"]
+    },
+    "public.search_target_kind": {
+      "name": "search_target_kind",
+      "schema": "public",
+      "values": ["property", "place", "address"]
+    },
+    "public.search_target_source": {
+      "name": "search_target_source",
+      "schema": "public",
+      "values": ["local", "nominatim"]
+    },
+    "public.user_role": {
+      "name": "user_role",
+      "schema": "public",
+      "values": ["case-worker", "restricted-geodata", "exporter"]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

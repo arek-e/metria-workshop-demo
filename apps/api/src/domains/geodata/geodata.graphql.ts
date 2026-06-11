@@ -1,4 +1,5 @@
 import { buildStatusResponse } from '../system/status';
+import { InMemoryGeodataRepository } from './geodata.memory-repository';
 import { GeodataRepository } from './geodata.repository';
 import { GeodataSearchService } from './geodata.search';
 
@@ -54,7 +55,7 @@ export const geodataSchema = `
 `;
 
 export function buildGeodataResolvers(
-  repository = new GeodataRepository(),
+  repository: GeodataRepository = new InMemoryGeodataRepository(),
   searchService = new GeodataSearchService(repository),
 ) {
   return {

@@ -8,7 +8,11 @@ npm run dev
 ```
 
 Open `http://localhost:4200`. The Fastify API runs on `http://127.0.0.1:3000`.
-GraphQL is available at `http://127.0.0.1:3000/graphql`.
+GraphQL is available at `http://127.0.0.1:3000/graphql`; the development GraphiQL IDE is served
+at `http://127.0.0.1:3000/graphiql`.
+
+`npm run dev` calls `npm run services`, which starts app Postgres, waits for it, applies
+Drizzle migrations, seeds workbench geodata, starts Keycloak, and seeds the demo realm.
 
 ## Installed Agent Tooling
 
@@ -47,6 +51,14 @@ API slice:
 npx vitest run --config apps/api/vitest.config.ts src/server.spec.ts
 ```
 
+Database slice:
+
+```sh
+npm run db:generate   # after editing apps/api/src/db/schema.ts
+npm run db:migrate
+npm run db:seed
+```
+
 ## Storybook Flow
 
 ```sh
@@ -63,6 +75,8 @@ npm run e2e
 
 `npm run e2e` goes through the `web-e2e` Nx project and uses `scripts/run-e2e.mjs` to start a
 temporary Fastify API plus a static web server for the built Angular app before running Cypress.
+The e2e script calls `npm run services` first, so the tested path is Angular -> GraphQL ->
+Fastify repository -> Drizzle -> Postgres.
 
 ## Quality Gate
 

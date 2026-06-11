@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { InMemoryGeodataRepository } from './domains/geodata/geodata.memory-repository';
 import { buildServer } from './server';
 
 let server: FastifyInstance | undefined;
@@ -12,7 +13,7 @@ afterEach(async () => {
 
 describe('api server', () => {
   it('reports health', async () => {
-    server = await buildServer({ logger: false });
+    server = await buildTestServer();
 
     const response = await server.inject({
       method: 'GET',
@@ -28,7 +29,7 @@ describe('api server', () => {
   });
 
   it('exposes versioned API status', async () => {
-    server = await buildServer({ logger: false });
+    server = await buildTestServer();
 
     const response = await server.inject({
       method: 'GET',
@@ -43,7 +44,7 @@ describe('api server', () => {
   });
 
   it('exposes status through GraphQL', async () => {
-    server = await buildServer({ logger: false });
+    server = await buildTestServer();
 
     const response = await server.inject({
       method: 'POST',
@@ -71,8 +72,59 @@ describe('api server', () => {
     });
   });
 
+  it('serves the GraphQL IDE in development', async () => {
+    server = await buildTestServer({
+      graphqlIde: true,
+    });
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/graphiql',
+      headers: {
+        accept: 'text/html',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['content-type']).toContain('text/html');
+    expect(response.body).toContain('<title>GraphiQL</title>');
+  });
+
+  it('redirects browser visits from the GraphQL API route to the IDE in development', async () => {
+    server = await buildTestServer({
+      graphqlIde: true,
+    });
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/graphql',
+      headers: {
+        accept: 'text/html',
+      },
+    });
+
+    expect(response.statusCode).toBe(302);
+    expect(response.headers.location).toBe('/graphiql');
+  });
+
+  it('keeps the GraphQL IDE disabled when configured off', async () => {
+    server = await buildTestServer({
+      graphqlIde: false,
+    });
+
+    const response = await server.inject({
+      method: 'GET',
+      url: '/graphiql',
+      headers: {
+        accept: 'text/html',
+      },
+    });
+
+    expect(response.statusCode).toBe(404);
+  });
+
   it('returns map workbench domain data through GraphQL', async () => {
-    server = await buildServer({ logger: false });
+    server = await buildTestServer();
 
     const response = await server.inject({
       method: 'POST',
@@ -138,7 +190,7 @@ describe('api server', () => {
   });
 
   it('searches local Swedish targets through GraphQL', async () => {
-    server = await buildServer({ logger: false });
+    server = await buildTestServer();
 
     const response = await server.inject({
       method: 'POST',
@@ -173,3 +225,11 @@ describe('api server', () => {
     });
   });
 });
+
+function buildTestServer(options: { graphqlIde?: boolean } = {}): Promise<FastifyInstance> {
+  return buildServer({
+    logger: false,
+    graphqlIde: options.graphqlIde,
+    geodataRepository: new InMemoryGeodataRepository(),
+  });
+}

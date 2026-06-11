@@ -16,6 +16,8 @@ handling restricted map data, and preparing decision-support exports.
 - `apps/web/src/app/shared/` - cross-feature API and authorization contracts.
 - `apps/api/src/domains/geodata/` - Fastify/Mercurius GraphQL domain for workbench catalog, search targets, and map feature geometry.
 - `apps/api/src/domains/system/` - system status contract shared by REST health and GraphQL status.
+- `apps/api/src/db/` - Drizzle schema, database client, migration runner, and geodata seed runner.
+- `apps/api/drizzle/` - generated Drizzle SQL migrations and migration metadata.
 - `apps/web-e2e/` - Cypress tests for map search, layer selection, responsive overlay behavior, and current account UI.
 - `docker/keycloak/` and `scripts/` - local Keycloak realm and seed tooling.
 - `.agents/docs/` - deeper docs loaded on demand; start with `.agents/docs/index.md`.
@@ -27,7 +29,10 @@ handling restricted map data, and preparing decision-support exports.
 npm start              # Angular dev server on http://localhost:4200
 npm run dev            # Services + Fastify API + Angular
 npm run dev:api        # Fastify API on http://127.0.0.1:3000
-npm run services       # Start and seed local Keycloak/Postgres services
+npm run services       # Start services, migrate/seed app Postgres, seed Keycloak
+npm run db:generate    # Generate Drizzle migrations
+npm run db:migrate     # Apply Drizzle migrations
+npm run db:seed        # Seed workbench geodata
 npm test               # Vitest tests
 npm run test:watch     # Vitest watch mode
 npm run build          # Production build
@@ -44,7 +49,7 @@ npm run quality        # Format, lint, tests, build, Cypress
 - Map/GIS: OpenLayers (`ol`) for map rendering, `fromLonLat`/projection handling, vector features, tile layers, and map controls.
 - Data/state: Angular signals/computed values and RxJS for service state.
 - Auth: Keycloak, `keycloak-js`, role mapping into app-level geodata permissions.
-- API: Fastify with explicit health/status endpoints and Mercurius GraphQL at `/graphql`.
+- API/data: Fastify with explicit health/status endpoints, Mercurius GraphQL at `/graphql`, Drizzle ORM, and Postgres.
 - Quality: Vitest, Cypress, Storybook, ESLint, Prettier, Husky, semantic-release.
 
 ## Product Rules
@@ -74,8 +79,9 @@ npm run quality        # Format, lint, tests, build, Cypress
 6. Test through public interfaces only. Do not test private methods or internal RxJS chains.
 7. Prefer deep modules for map/domain logic: small public API, richer internal behavior.
 8. Keep Angular components focused on rendering, OpenLayers orchestration, and delegating policy decisions.
-9. Refactor only after tests are green.
-10. After changing architecture, commands, workflows, or conventions, update `.agents/docs/`.
+9. Keep database access behind backend repositories. Angular talks to GraphQL only; GraphQL resolvers talk to services/repositories; repositories talk to Drizzle/Postgres.
+10. Refactor only after tests are green.
+11. After changing architecture, commands, workflows, or conventions, update `.agents/docs/`.
 
 ## Domain Dictionary
 

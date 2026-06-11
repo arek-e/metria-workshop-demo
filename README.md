@@ -21,9 +21,9 @@ npm run dev
 Open `http://127.0.0.1:4200` and sign in through Keycloak. The local API listens on
 `http://127.0.0.1:3000`.
 
-`npm run dev` starts the local Docker services first, waits for the imported Keycloak realm,
-seeds the demo realm data through the Keycloak Admin API, and then starts the Fastify API and
-Angular through Nx.
+`npm run dev` starts the local Docker services first, waits for application Postgres, applies
+Drizzle migrations, seeds geodata, waits for the imported Keycloak realm, seeds the demo realm
+data through the Keycloak Admin API, and then starts the Fastify API and Angular through Nx.
 
 Demo credentials:
 
@@ -72,6 +72,16 @@ Application database URL:
 postgresql://metria:metria@127.0.0.1:5433/metria_map
 ```
 
+Drizzle owns the application database schema and migrations:
+
+```text
+drizzle.config.ts                 Drizzle Kit config
+apps/api/src/db/schema.ts         TypeScript schema
+apps/api/drizzle/                 Generated SQL migrations
+apps/api/src/db/migrate.ts        Migration runner
+apps/api/src/db/seed.ts           Geodata seed runner
+```
+
 ## API
 
 The Fastify app lives in `apps/api`.
@@ -88,11 +98,17 @@ Available local endpoints:
 GET /health
 GET /api/status
 POST /graphql
+GET /graphiql  # Development GraphQL IDE
 ```
 
 GraphQL owns the workbench data boundary. The current schema exposes `status`,
 `mapWorkbench`, and `searchTargets(query:, limit:)`. The Angular app loads map layer metadata,
-default selected layers, searchable targets, and vector geometry through this API.
+default selected layers, searchable targets, and vector geometry through this API. Runtime
+resolvers read through the Drizzle-backed geodata repository; tests inject an in-memory
+repository at the same interface.
+
+In development, browser visits to `/graphql` redirect to `/graphiql`. API clients should still
+send GraphQL operations to `/graphql`.
 
 Runtime configuration:
 
@@ -105,8 +121,12 @@ API_CORS_ORIGIN=true
 Useful service commands:
 
 ```sh
-npm run services       # Start app Postgres + Keycloak, wait, then seed auth data
+npm run services       # Start app Postgres, migrate/seed geodata, start/seed Keycloak
 npm run db:status      # Check application Postgres readiness
+npm run db:wait        # Wait for application Postgres to accept connections
+npm run db:generate    # Generate a Drizzle migration from apps/api/src/db/schema.ts
+npm run db:migrate     # Apply Drizzle migrations to the application database
+npm run db:seed        # Seed geodata rows used by the workbench
 npm run db:shell       # Open psql against the application database
 npm run services:seed  # Re-apply demo realm/user/client seed data
 npm run services:down  # Stop services; keeps Postgres volumes
@@ -147,8 +167,12 @@ npm run test:watch    # Vitest watch mode
 npm run dev           # Start local services, Fastify API, and Angular
 npm run dev:web       # Start local services and Angular only
 npm run dev:api       # Start Fastify API only
-npm run services      # Start local Docker services and seed auth data
+npm run services      # Start services, migrate/seed geodata, and seed auth data
 npm run db:status     # Check application Postgres readiness
+npm run db:wait       # Wait for application Postgres to accept connections
+npm run db:generate   # Generate Drizzle migrations
+npm run db:migrate    # Apply Drizzle migrations
+npm run db:seed       # Seed workbench geodata
 npm run db:shell      # Open psql against the application database
 npm run services:seed # Re-apply Keycloak demo seed data
 npm run services:down # Stop local Docker services
@@ -176,6 +200,7 @@ The main public behavior lives in:
 apps/web/src/app/map-workbench/layers/layer-access-policy.ts
 apps/web/src/app/map-workbench/workbench-data/map-workbench-api.ts
 apps/api/src/domains/geodata/
+apps/api/src/db/schema.ts
 ```
 
 The tests show the workshop's preferred TDD style:
@@ -206,6 +231,6 @@ workflow assets in `.agents/` and `.specify/`.
 ## Dependency Notes
 
 Runtime dependencies are intentionally limited to what the current implementation imports:
-Angular, Angular Material/CDK, OpenLayers, Keycloak, Fastify, Mercurius/GraphQL, local
-fonts/icons, RxJS, and runtime helpers. Add GIS analysis, export, realtime, chart, or grid
-libraries only with the vertical feature that uses them.
+Angular, Angular Material/CDK, OpenLayers, Keycloak, Fastify, Mercurius/GraphQL,
+Drizzle/Postgres, local fonts/icons, RxJS, and runtime helpers. Add GIS analysis, export,
+realtime, chart, or grid libraries only with the vertical feature that uses them.

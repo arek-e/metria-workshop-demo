@@ -1,17 +1,19 @@
 import { SearchTarget } from './geodata.models';
+import { InMemoryGeodataRepository } from './geodata.memory-repository';
 import { GeodataRepository } from './geodata.repository';
 
 export class GeodataSearchService {
-  constructor(private readonly repository = new GeodataRepository()) {}
+  constructor(private readonly repository: GeodataRepository = new InMemoryGeodataRepository()) {}
 
-  searchTargets(query: string, limit = 5): readonly SearchTarget[] {
+  async searchTargets(query: string, limit = 5): Promise<readonly SearchTarget[]> {
     const normalizedQuery = normalizeSearchText(query);
     if (!normalizedQuery) {
       return [];
     }
 
-    return this.repository
-      .listSearchTargets()
+    const targets = await this.repository.listSearchTargets();
+
+    return targets
       .filter((target) =>
         normalizeSearchText(`${target.label} ${target.municipality ?? ''}`).includes(
           normalizedQuery,
