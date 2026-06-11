@@ -4,10 +4,10 @@
 
 ```sh
 npm install
-npm start
+npm run dev
 ```
 
-Open `http://localhost:4200`.
+Open `http://localhost:4200`. The Fastify API runs on `http://127.0.0.1:3000`.
 
 ## Installed Agent Tooling
 
@@ -37,7 +37,13 @@ REFACTOR: clean up only after all tests are green
 Good first slice:
 
 ```sh
-npm test -- src/app/layer-decision-support/layer-access-policy.spec.ts
+npx vitest run --config apps/web/vitest.config.ts src/app/layer-decision-support/layer-access-policy.spec.ts
+```
+
+API slice:
+
+```sh
+npx vitest run --config apps/api/vitest.config.ts src/server.spec.ts
 ```
 
 ## Storybook Flow
@@ -46,16 +52,16 @@ npm test -- src/app/layer-decision-support/layer-access-policy.spec.ts
 npm run storybook
 ```
 
-Use Storybook to inspect loading, loaded, restricted, projection-warning, and export-ready states.
+Use Storybook to inspect loading, loaded, restricted, and responsive map workspace states.
 
 ## Cypress Flow
 
 ```sh
-npm start
 npm run e2e
 ```
 
-Cypress assumes the Angular dev server is already running.
+`npm run e2e` goes through the `web-e2e` Nx project and uses `scripts/run-e2e.mjs` to start a
+temporary Angular dev server before running Cypress.
 
 ## Quality Gate
 
@@ -63,4 +69,5 @@ Cypress assumes the Angular dev server is already running.
 npm run quality
 ```
 
-Run this before handing a task to another agent or merging changes.
+Run this before handing a task to another agent or merging changes. It includes format check,
+lint, unit/API tests, production builds, and the Nx Cypress e2e target.

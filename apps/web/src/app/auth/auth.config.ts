@@ -16,6 +16,7 @@ const DEFAULT_KEYCLOAK_AUTH_CONFIG: KeycloakAuthConfig = {
     onLoad: 'check-sso',
     pkceMethod: 'S256',
     checkLoginIframe: false,
+    silentCheckSsoFallback: false,
   },
 };
 

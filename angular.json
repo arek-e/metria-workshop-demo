@@ -5,33 +5,34 @@
     "packageManager": "npm",
     "analytics": false
   },
-  "newProjectRoot": "projects",
+  "newProjectRoot": "apps",
   "projects": {
-    "metria-ai-quality-workbench": {
+    "web": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
           "style": "scss"
         }
       },
-      "root": "",
-      "sourceRoot": "src",
+      "root": "apps/web",
+      "sourceRoot": "apps/web/src",
       "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "browser": "src/main.ts",
+            "outputPath": "dist/apps/web",
+            "browser": "apps/web/src/main.ts",
             "polyfills": ["zone.js"],
-            "tsConfig": "tsconfig.app.json",
+            "tsConfig": "apps/web/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "apps/web/public"
               }
             ],
-            "styles": ["src/tailwind.css", "src/styles.scss"]
+            "styles": ["apps/web/src/tailwind.css", "apps/web/src/styles.scss"]
           },
           "configurations": {
             "production": {
@@ -61,10 +62,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "metria-ai-quality-workbench:build:production"
+              "buildTarget": "web:build:production"
             },
             "development": {
-              "buildTarget": "metria-ai-quality-workbench:build:development"
+              "buildTarget": "web:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -75,34 +76,34 @@
         "storybook": {
           "builder": "@storybook/angular:start-storybook",
           "options": {
-            "configDir": ".storybook",
-            "browserTarget": "metria-ai-quality-workbench:build",
-            "tsConfig": "tsconfig.storybook.json",
+            "configDir": "apps/web/.storybook",
+            "browserTarget": "web:build",
+            "tsConfig": "apps/web/tsconfig.storybook.json",
             "port": 6006
           }
         },
         "build-storybook": {
           "builder": "@storybook/angular:build-storybook",
           "options": {
-            "configDir": ".storybook",
-            "browserTarget": "metria-ai-quality-workbench:build",
-            "tsConfig": "tsconfig.storybook.json",
-            "outputDir": "storybook-static"
+            "configDir": "apps/web/.storybook",
+            "browserTarget": "web:build",
+            "tsConfig": "apps/web/tsconfig.storybook.json",
+            "outputDir": "dist/storybook/web"
           }
         },
         "test": {
           "builder": "@angular/build:karma",
           "options": {
             "polyfills": ["zone.js", "zone.js/testing"],
-            "tsConfig": "tsconfig.spec.json",
+            "tsConfig": "apps/web/tsconfig.spec.json",
             "inlineStyleLanguage": "scss",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "apps/web/public"
               }
             ],
-            "styles": ["src/tailwind.css", "src/styles.scss"]
+            "styles": ["apps/web/src/tailwind.css", "apps/web/src/styles.scss"]
           }
         }
       }

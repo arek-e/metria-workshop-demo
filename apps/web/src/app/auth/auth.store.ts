@@ -46,7 +46,7 @@ export class AuthStore implements OnDestroy {
 
     this.initialized = true;
 
-    if (!this.canUseBrowser()) {
+    if (!this.canUseBrowser() || this.isAuthDisabledForE2e()) {
       this.stateSubject.next({ status: 'anonymous' });
       return;
     }
@@ -144,6 +144,9 @@ export class AuthStore implements OnDestroy {
     return {
       ...this.config.initOptions,
       redirectUri: this.config.initOptions.redirectUri ?? this.currentBrowserUrl(),
+      silentCheckSsoRedirectUri:
+        this.config.initOptions.silentCheckSsoRedirectUri ??
+        `${this.browserOrigin()}/silent-check-sso.html`,
     };
   }
 
@@ -201,6 +204,12 @@ export class AuthStore implements OnDestroy {
 
   private canUseBrowser(): boolean {
     return typeof window !== 'undefined';
+  }
+
+  private isAuthDisabledForE2e(): boolean {
+    return (
+      this.canUseBrowser() && new URLSearchParams(window.location.search).get('auth') === 'disabled'
+    );
   }
 
   private async ensureKeycloakAvailable(options: { reportError: boolean }): Promise<boolean> {

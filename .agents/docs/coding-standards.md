@@ -14,6 +14,13 @@
 - Prefer signals for local application state.
 - Keep accessibility labels meaningful because Cypress and Testing Library rely on them.
 
+## API
+
+- Keep Fastify route registration in `apps/api/src/server.ts` behind `buildServer`.
+- Test API behavior with `server.inject` instead of opening sockets.
+- Read environment variables with bracket syntax because the workspace enables `noPropertyAccessFromIndexSignature`.
+- Keep the API boundary explicit before wiring Angular data access to it.
+
 ## Testing
 
 - Tests should verify behavior through public interfaces.

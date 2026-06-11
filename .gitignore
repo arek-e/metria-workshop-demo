@@ -7,6 +7,7 @@
 /bazel-out
 /coverage
 /storybook-static
+/.nx/cache
 documentation.json
 .mcp.json
 
@@ -16,6 +17,7 @@ documentation.json
 
 # Node
 /node_modules
+apps/**/node_modules/
 npm-debug.log
 yarn-error.log
 

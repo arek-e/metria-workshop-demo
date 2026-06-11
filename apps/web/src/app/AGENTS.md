@@ -6,19 +6,20 @@ real geospatial product surface.
 ## Commands
 
 ```sh
-npm test -- src/app/location-search/location-search-policy.spec.ts
-npm test -- src/app/layer-decision-support/layer-access-policy.spec.ts
-npm test -- src/app/app.spec.ts
+npx vitest run --config apps/web/vitest.config.ts src/app/location-search/location-search-policy.spec.ts
+npx vitest run --config apps/web/vitest.config.ts src/app/layer-decision-support/layer-access-policy.spec.ts
+npx vitest run --config apps/web/vitest.config.ts src/app/app.spec.ts
 npm run build
 ```
 
 ## Structure
 
-- `app.ts`, `app.html`, `app.scss` - map shell, OpenLayers orchestration, search UI, layer controls, auth/account UI, and responsive overlay styling.
+- `app.ts`, `app.html`, `app.scss` - thin root shell for the map workbench feature.
+- `map-workbench/` - map shell, OpenLayers orchestration, search UI, layer controls, auth/account UI, and responsive overlay styling.
 - `app.spec.ts` - component behavior smoke test through Testing Library.
 - `app.stories.ts` - Storybook states for visual review.
 - `location-search/` - public search policy, local Swedish search targets, and coordinate formatting.
-- `layer-decision-support/layer-access-policy.ts` - deep domain module for layer availability, selected layers, projection warnings, and export readiness.
+- `layer-decision-support/layer-access-policy.ts` - domain module for layer availability, selected layers, and stable render ordering.
 - `layer-decision-support/layer-access-policy.spec.ts` - public-interface tests for layer policy behavior.
 - `layer-decision-support/layer-catalog.fixture.ts` - deterministic seed data for map layers.
 - `auth/` - Keycloak startup, login/logout, token role extraction, and app role mapping.
@@ -45,7 +46,7 @@ npm run build
 - Search behavior: test through `findLocalSearchTarget`, coordinate formatting, and visible component outcomes.
 - Layer behavior: call public functions such as `buildLayerDecisionView` and `nextSelectedLayerIds`.
 - Component behavior: render with Testing Library and assert visible output/interactions.
-- E2E behavior: use Cypress for search, layer toggles, restricted geodata sign-in, and viewport fit.
+- E2E behavior: use Cypress for search, layer toggles, restricted geodata disabled state, account UI, and viewport fit.
 - Avoid private method tests and implementation call-count tests.
 - Add one test at a time during TDD cycles.
 
@@ -53,6 +54,6 @@ npm run build
 
 - Use Angular Material for familiar controls and menus.
 - Use Tailwind for layout and spacing when it keeps the template readable.
-- Keep app-specific OpenLayers, Material overrides, and reusable layout rules in `app.scss`.
+- Keep app-specific OpenLayers, Material overrides, and reusable layout rules in the component stylesheet that owns the UI.
 - Keep cards to repeated layer items and avoid nested cards.
 - Ensure long Swedish place names, coordinates, roles, and layer labels wrap without causing horizontal overflow.

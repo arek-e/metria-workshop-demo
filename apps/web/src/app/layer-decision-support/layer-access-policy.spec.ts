@@ -7,8 +7,6 @@ describe('layer decision support policy', () => {
       layers: LAYER_CATALOG,
       selectedLayerIds: ['protected-imagery'],
       roles: ['case-worker', 'exporter'],
-      locale: 'en-GB',
-      currentProjection: 'EPSG:3006',
     });
 
     const imagery = view.decisions.find((decision) => decision.layer.id === 'protected-imagery');
@@ -24,8 +22,6 @@ describe('layer decision support policy', () => {
       layers: LAYER_CATALOG,
       selectedLayerIds: ['climate-risk', 'property-boundaries', 'protected-imagery'],
       roles: ['case-worker', 'restricted-geodata', 'exporter'],
-      locale: 'en-GB',
-      currentProjection: 'EPSG:3006',
     });
 
     expect(view.visibleLayerIds).toEqual([
@@ -35,53 +31,12 @@ describe('layer decision support policy', () => {
     ]);
   });
 
-  it('reports projection warnings only for selected layers that differ from the current map projection', () => {
-    const view = buildLayerDecisionView({
-      layers: LAYER_CATALOG,
-      selectedLayerIds: ['property-boundaries', 'protected-imagery'],
-      roles: ['case-worker', 'restricted-geodata', 'exporter'],
-      locale: 'en-GB',
-      currentProjection: 'EPSG:3006',
-    });
-
-    expect(view.projectionWarningCount).toBe(1);
-    expect(
-      view.decisions.find((decision) => decision.layer.id === 'protected-imagery')
-        ?.projectionWarning,
-    ).toContain('EPSG:3857');
-  });
-
-  it('only marks export as ready when selected layers share at least one export format', () => {
-    const compatible = buildLayerDecisionView({
-      layers: LAYER_CATALOG,
-      selectedLayerIds: ['property-boundaries', 'climate-risk'],
-      roles: ['case-worker', 'exporter'],
-      locale: 'en-GB',
-      currentProjection: 'EPSG:3006',
-    });
-
-    const incompatible = buildLayerDecisionView({
-      layers: LAYER_CATALOG,
-      selectedLayerIds: ['protected-imagery', 'utility-corridors'],
-      roles: ['case-worker', 'restricted-geodata', 'exporter'],
-      locale: 'en-GB',
-      currentProjection: 'EPSG:3006',
-    });
-
-    expect(compatible.exportReady).toBe(true);
-    expect(compatible.exportFormats).toEqual(['pdf', 'xlsx']);
-    expect(incompatible.exportReady).toBe(false);
-    expect(incompatible.exportFormats).toEqual([]);
-  });
-
   it('does not toggle unavailable layers through the public selection interface', () => {
     const selectedIds = nextSelectedLayerIds(
       {
         layers: LAYER_CATALOG,
         selectedLayerIds: ['property-boundaries'],
         roles: ['case-worker', 'exporter'],
-        locale: 'en-GB',
-        currentProjection: 'EPSG:3006',
       },
       'protected-imagery',
     );

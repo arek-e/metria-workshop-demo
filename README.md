@@ -1,8 +1,15 @@
 # Metria AI Quality Workbench
 
-Angular/GIS workbench for AI-assisted software development, spec-driven development,
-TDD, and AI-driven quality. The application models a geodata decision-support
-workflow with production-style agent context, tests, and quality gates.
+Nx monorepo for an Angular/GIS workbench and a Fastify API. The application models a
+geodata decision-support workflow with production-style agent context, tests, and quality gates.
+
+## Workspace Layout
+
+```text
+apps/web      Angular 20 standalone map application
+apps/api      Fastify API service
+apps/web-e2e  Cypress end-to-end suite for the web app
+```
 
 ## Quick Start
 
@@ -11,10 +18,12 @@ npm install
 npm run dev
 ```
 
-Open `http://127.0.0.1:4200` and sign in through Keycloak.
+Open `http://127.0.0.1:4200` and sign in through Keycloak. The local API listens on
+`http://127.0.0.1:3000`.
 
 `npm run dev` starts the local Docker services first, waits for the imported Keycloak realm,
-seeds the demo realm data through the Keycloak Admin API, and then starts Angular.
+seeds the demo realm data through the Keycloak Admin API, and then starts the Fastify API and
+Angular through Nx.
 
 Demo credentials:
 
@@ -63,6 +72,31 @@ Application database URL:
 postgresql://metria:metria@127.0.0.1:5433/metria_map
 ```
 
+## API
+
+The Fastify app lives in `apps/api`.
+
+```sh
+npm run dev:api      # Start Fastify on http://127.0.0.1:3000
+nx run api:test      # Run API contract tests
+nx run api:build     # Compile API output to dist/apps/api
+```
+
+Available local endpoints:
+
+```text
+GET /health
+GET /api/status
+```
+
+Runtime configuration:
+
+```text
+API_HOST=127.0.0.1
+API_PORT=3000
+API_CORS_ORIGIN=true
+```
+
 Useful service commands:
 
 ```sh
@@ -105,19 +139,22 @@ If it still repeats, clear cookies for `127.0.0.1:8080` and `localhost:8080`, th
 ```sh
 npm test              # Vitest behavior tests
 npm run test:watch    # Vitest watch mode
-npm run dev           # Start local services, wait for readiness, then start Angular
+npm run dev           # Start local services, Fastify API, and Angular
+npm run dev:web       # Start local services and Angular only
+npm run dev:api       # Start Fastify API only
 npm run services      # Start local Docker services and seed auth data
 npm run db:status     # Check application Postgres readiness
 npm run db:shell      # Open psql against the application database
 npm run services:seed # Re-apply Keycloak demo seed data
 npm run services:down # Stop local Docker services
-npm run build         # Angular production build
+npm run build         # Production build for Angular and API
 npm run lint          # ESLint
 npm run storybook     # Storybook
-npm run e2e           # Cypress; requires npm start in another terminal
-npm run quality       # Format check, lint, tests, build
+npm run e2e           # Starts a temporary web server and runs Cypress through Nx
+npm run quality       # Format check, lint, tests, build, and Cypress e2e
 npm run keycloak:up   # Alias for npm run services
 npm run keycloak:down # Alias for npm run services:down
+npx nx show projects  # List Nx projects
 ```
 
 ## Feature Slice
@@ -126,21 +163,18 @@ The active feature is a layer decision-support panel:
 
 - map layer metadata
 - restricted geodata access
-- projection warnings
 - stable map render order
-- export readiness
-- locale-aware quality metadata
 
 The main public behavior lives in:
 
 ```text
-src/app/layer-decision-support/layer-access-policy.ts
+apps/web/src/app/layer-decision-support/layer-access-policy.ts
 ```
 
 The tests show the workshop's preferred TDD style:
 
 ```text
-src/app/layer-decision-support/layer-access-policy.spec.ts
+apps/web/src/app/layer-decision-support/layer-access-policy.spec.ts
 ```
 
 ## Agent Context
@@ -162,10 +196,7 @@ workflow assets in `.agents/` and `.specify/`.
 
 ## Dependency Notes
 
-The package includes Metria-relevant libraries for product work: Angular Material/CDK,
-Calcite, OpenLayers, proj4, turf, jsts, Apollo GraphQL, Keycloak/OIDC references, realtime
-clients, chart/grid libraries, document/export libraries, Vitest, Cypress, Storybook, ESLint,
-Prettier, Husky, and semantic-release.
-
-Some optional export/document libraries may report transitive `npm audit` warnings. Agents
-should surface supply-chain risk instead of hiding it.
+Runtime dependencies are intentionally limited to what the current implementation imports:
+Angular, Angular Material/CDK, OpenLayers, Keycloak, Fastify, local fonts/icons, RxJS, and
+runtime helpers. Add GIS analysis, export, realtime, chart, or grid libraries only with the
+vertical feature that uses them.

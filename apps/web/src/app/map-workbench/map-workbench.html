@@ -1,0 +1,255 @@
+<main
+  class="block min-h-[100dvh] overflow-hidden bg-[#050706] font-[Inter,ui-sans-serif,system-ui,sans-serif] text-[#303733]"
+  aria-label="Metria GIS-arbetsyta"
+>
+  <section
+    class="relative isolate min-h-[100dvh] bg-[linear-gradient(135deg,rgba(157,181,126,0.6),rgba(121,158,167,0.78)),#bfcda3]"
+    aria-label="Kartyta"
+  >
+    <div #mapContainer class="absolute inset-0 z-[1]" [attr.aria-label]="mapAriaLabel()"></div>
+
+    <aside
+      class="absolute top-[clamp(12px,2vw,22px)] left-[clamp(12px,2vw,24px)] z-10 flex max-h-[calc(100dvh-36px)] w-[clamp(320px,32vw,368px)] max-w-[calc(100vw-32px)] min-w-0 flex-col overflow-hidden rounded-[5px] border border-[rgba(41,49,45,0.16)] bg-[rgba(248,248,246,0.97)] shadow-[0_18px_42px_rgba(13,19,16,0.26)] backdrop-blur-[10px] max-[700px]:top-[62px] max-[700px]:left-2.5 max-[700px]:max-h-[calc(100dvh-216px)] max-[700px]:w-[calc(100vw-20px)] max-[700px]:max-w-[calc(100vw-20px)]"
+      aria-label="Sökning och lagerstyrning"
+    >
+      <form
+        class="grid shrink-0 gap-0.5 border-b border-[rgba(41,49,45,0.13)] p-[8px_10px_10px] max-[700px]:p-[7px_9px_9px]"
+        aria-label="Fastighetssökning"
+        (submit)="runSearch(); $event.preventDefault()"
+      >
+        <mat-form-field appearance="fill" subscriptSizing="dynamic">
+          <mat-label>Sökläge</mat-label>
+          <mat-select
+            [value]="searchMode()"
+            (selectionChange)="setSearchMode($event.value)"
+            aria-label="Sökläge"
+          >
+            <mat-option value="property">Fastighet</mat-option>
+            <mat-option value="address">Adress</mat-option>
+            <mat-option value="place">Ort</mat-option>
+            <mat-option value="planning-unit">Planområde</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" subscriptSizing="dynamic">
+          <mat-label>Sök fastighet, adress eller ort</mat-label>
+          <input
+            matInput
+            [value]="searchQuery()"
+            (input)="setSearchQuery($event)"
+            aria-label="Sök fastighet, adress eller ort"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            aria-label="Rensa sökning"
+            (click)="clearSearch()"
+          >
+            <mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <div class="flex min-w-0 items-center justify-between gap-2 px-0.5 pt-0.5">
+          <span
+            class="search-status min-w-0 truncate text-[0.74rem] font-semibold"
+            [class.search-status--found]="searchStatus() === 'found'"
+            [class.search-status--not-found]="searchStatus() === 'not-found'"
+            [class.search-status--error]="searchStatus() === 'error'"
+          >
+            {{ searchMessage() }}
+          </span>
+          <button
+            class="min-w-16 shrink-0 rounded"
+            mat-stroked-button
+            type="submit"
+            [disabled]="searchStatus() === 'searching'"
+          >
+            Sök
+          </button>
+        </div>
+      </form>
+
+      <section
+        class="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        aria-labelledby="property-heading"
+      >
+        <header
+          class="grid min-h-[38px] grid-cols-[auto_2px_minmax(0,1fr)] items-center gap-2 px-3"
+        >
+          <div class="min-w-0 text-[0.8rem] font-bold text-[#6f7974]">
+            <span>Metria</span>
+          </div>
+          <span class="h-[18px] w-0.5 bg-[#df887c]"></span>
+          <span class="min-w-0 truncate text-[0.8rem] text-[#6d7772]">Geodata</span>
+        </header>
+
+        <div class="px-3.5 pt-1.5 pb-3.5">
+          <div class="flex min-w-0 items-start gap-[7px]">
+            <mat-icon
+              class="mt-px size-5 shrink-0 text-[#6e7873]"
+              fontSet="material-symbols-rounded"
+              aria-hidden="true"
+            >
+              search
+            </mat-icon>
+            <h1
+              id="property-heading"
+              class="text-wrap-anywhere m-0 border-b border-[rgba(48,55,51,0.5)] text-[0.98rem] leading-[1.3] font-semibold text-[#44504b]"
+            >
+              {{ selectedProperty().name }}
+            </h1>
+          </div>
+          <div
+            class="mt-[5px] mb-3.5 ml-[27px] flex min-w-0 flex-wrap items-center gap-1.5 text-[0.76rem] text-[#606963] max-[420px]:flex-col max-[420px]:items-start"
+          >
+            <span>({{ selectedProperty().type }})</span>
+            <span
+              class="search-status min-w-0 truncate text-[0.74rem] font-semibold"
+              [class.search-status--found]="searchStatus() === 'found'"
+              [class.search-status--not-found]="searchStatus() === 'not-found'"
+              [class.search-status--error]="searchStatus() === 'error'"
+            >
+              {{ searchMessage() }}
+            </span>
+          </div>
+          <dl class="m-0">
+            <div>
+              <dt class="mb-[3px] text-[0.84rem] text-[#69736e]">Platsinfo</dt>
+              <dd
+                class="text-wrap-anywhere m-0 text-[0.9rem] leading-[1.35] font-medium text-[#4d5752]"
+              >
+                {{ selectedProperty().coordinates }}
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <mat-divider />
+
+        <section class="grid gap-2.5 p-3" aria-label="Lagerbeslut">
+          <details
+            class="control-group min-w-0 overflow-hidden rounded-[5px] border border-[rgba(61,72,66,0.13)] bg-white/35"
+            aria-label="Lista med lagerbeslut"
+            open
+          >
+            <summary
+              class="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 p-[8px_10px] select-none max-[420px]:flex-col max-[420px]:items-start max-[420px]:gap-1.5"
+            >
+              <span class="min-w-0">
+                <span
+                  class="block text-[0.68rem] font-bold tracking-normal text-[#9d3a36] uppercase"
+                >
+                  Lager
+                </span>
+                <strong class="mt-0.5 block text-[0.92rem] leading-[1.15] font-bold text-[#35403a]">
+                  Kartlager
+                </strong>
+              </span>
+            </summary>
+
+            <div class="grid gap-1.5 px-2 pb-2">
+              @for (decision of view().decisions; track decision.layer.id) {
+                <mat-card
+                  class="grid min-w-0 gap-1.5 rounded-[5px] border border-[rgba(61,72,66,0.13)] bg-white/70 p-[8px_10px] shadow-none"
+                  [class.layer-card--disabled]="!decision.available"
+                >
+                  <mat-checkbox
+                    [checked]="decision.selected"
+                    [disabled]="!decision.available"
+                    [matTooltip]="decision.disabledReason ?? ''"
+                    (change)="toggleLayer(decision.layer.id)"
+                  >
+                    {{ decision.layer.title }}
+                  </mat-checkbox>
+                </mat-card>
+              }
+            </div>
+          </details>
+        </section>
+      </section>
+    </aside>
+
+    <div
+      class="absolute top-[clamp(12px,2vw,22px)] right-[clamp(12px,2vw,24px)] z-10"
+      aria-label="Användarkonto"
+    >
+      @if (authState().status === 'authenticated' && authState().user; as user) {
+        <button
+          class="user-avatar"
+          type="button"
+          [attr.aria-label]="'Användare: ' + user.displayName"
+          [matMenuTriggerFor]="userMenu"
+          [matTooltip]="user.displayName"
+        >
+          <span>{{ userInitials() }}</span>
+        </button>
+        <mat-menu #userMenu="matMenu" xPosition="before" yPosition="below" class="user-menu">
+          <div class="user-menu__summary">
+            <span class="user-menu__avatar">{{ userInitials() }}</span>
+            <span class="min-w-0">
+              <strong>{{ user.displayName }}</strong>
+              <span>{{ roleSummary() }}</span>
+            </span>
+          </div>
+          <button mat-menu-item type="button" (click)="logout()">
+            <mat-icon fontSet="material-symbols-rounded">logout</mat-icon>
+            <span>Logga ut</span>
+          </button>
+        </mat-menu>
+      } @else if (authState().status === 'error') {
+        <button
+          class="user-avatar user-avatar--error"
+          type="button"
+          aria-label="Logga in"
+          [matTooltip]="authState().error ?? 'Logga in'"
+          (click)="login()"
+        >
+          <mat-icon fontSet="material-symbols-rounded">person_alert</mat-icon>
+        </button>
+      } @else {
+        <button
+          class="user-avatar user-avatar--pending"
+          type="button"
+          aria-label="Autentiserar"
+          disabled
+        >
+          <mat-icon fontSet="material-symbols-rounded">person</mat-icon>
+        </button>
+      }
+    </div>
+
+    <div
+      class="absolute bottom-[18px] left-[calc(clamp(12px,2vw,24px)+clamp(320px,32vw,368px)+12px)] z-[9] grid gap-2 max-[700px]:bottom-2.5 max-[700px]:left-2.5"
+      aria-label="Kartreglage"
+    >
+      <button
+        class="size-[38px] rounded-[3px] border border-[rgba(41,49,45,0.22)] bg-[rgba(248,248,246,0.96)] text-[#29312d] shadow-[0_8px_18px_rgba(13,19,16,0.22)]"
+        mat-icon-button
+        type="button"
+        aria-label="Zooma in"
+        (click)="zoomBy(1)"
+      >
+        <mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+      </button>
+      <button
+        class="size-[38px] rounded-[3px] border border-[rgba(41,49,45,0.22)] bg-[rgba(248,248,246,0.96)] text-[#29312d] shadow-[0_8px_18px_rgba(13,19,16,0.22)]"
+        mat-icon-button
+        type="button"
+        aria-label="Zooma ut"
+        (click)="zoomBy(-1)"
+      >
+        <mat-icon fontSet="material-symbols-rounded">remove</mat-icon>
+      </button>
+      <button
+        class="size-[38px] rounded-[3px] border border-[rgba(41,49,45,0.22)] bg-[rgba(248,248,246,0.96)] text-[#29312d] shadow-[0_8px_18px_rgba(13,19,16,0.22)]"
+        mat-icon-button
+        type="button"
+        aria-label="Gå till fastighet"
+        (click)="goToProperty()"
+      >
+        <mat-icon fontSet="material-symbols-rounded">home</mat-icon>
+      </button>
+    </div>
+  </section>
+</main>

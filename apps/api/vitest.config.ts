@@ -1,18 +1,15 @@
 import { fileURLToPath } from 'node:url';
 
-import angular from '@analogjs/vite-plugin-angular';
 import { defineConfig } from 'vitest/config';
 
 const projectRoot = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   root: projectRoot,
-  cacheDir: '../../node_modules/.vite/apps/web',
-  plugins: [angular()],
+  cacheDir: '../../node_modules/.vite/apps/api',
   test: {
     globals: true,
-    environment: 'jsdom',
-    setupFiles: ['src/test-setup.ts'],
+    environment: 'node',
     include: ['src/**/*.spec.ts'],
     coverage: {
       provider: 'v8',

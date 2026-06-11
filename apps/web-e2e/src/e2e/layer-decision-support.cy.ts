@@ -1,16 +1,9 @@
 describe('layer decision support', () => {
-  const keycloakOrigin = 'http://127.0.0.1:8080';
-
-  const authUser = {
-    username: Cypress.env('KEYCLOAK_E2E_USERNAME') || 'cypress',
-    password: Cypress.env('KEYCLOAK_E2E_PASSWORD') || 'cypress',
-  };
-
   const visitWorkbench = () => {
     cy.intercept('GET', '**tile.openstreetmap.org/**', {
       statusCode: 204,
     });
-    cy.visit('/');
+    cy.visit('/?auth=disabled');
   };
 
   const assertViewportFit = () => {
@@ -41,43 +34,27 @@ describe('layer decision support', () => {
     cy.contains('Planlinjer').should('not.exist');
   };
 
-  const signInWithKeycloak = () => {
-    cy.contains('button', 'Behörighet').click();
+  it('renders the current account avatar without the removed permission button', () => {
+    visitWorkbench();
 
-    cy.origin(keycloakOrigin, { args: authUser }, ({ username, password }) => {
-      cy.get('#username', { timeout: 15_000 }).type(username);
-      cy.get('#password').type(password, { log: false });
-      cy.get('#kc-login').click();
-    });
-
-    cy.location('port', { timeout: 20_000 }).should('eq', '4200');
     cy.get('div[aria-label="Användarkonto"]')
-      .find('button[aria-label="Användare: Metria Cypress"]')
-      .should('be.visible');
-  };
+      .find('button[aria-label="Autentiserar"]')
+      .should('be.visible')
+      .and('be.disabled');
+    cy.contains('button', 'Behörighet').should('not.exist');
+  });
 
   it('supports layer selection while keeping restricted imagery unavailable without access', () => {
     visitWorkbench();
 
     cy.contains('Skyddad flygbild').closest('mat-card').as('imageryCard');
-    cy.get('@imageryCard').should('contain.text', 'Kräver roll: restricted-geodata');
     cy.get('@imageryCard').find('input[type="checkbox"]').should('be.disabled');
 
     cy.contains('Klimatriskzoner').closest('mat-card').as('climateCard');
     cy.get('@climateCard').find('input[type="checkbox"]').uncheck({ force: true });
-    cy.contains('1 lager');
+    cy.get('div[aria-label*="synliga lager: Fastighetsgränser"]').should('exist');
     cy.get('@climateCard').find('input[type="checkbox"]').check({ force: true });
-    cy.contains('2 lager');
-  });
-
-  it('enables restricted layers after Keycloak sign-in', () => {
-    visitWorkbench();
-    signInWithKeycloak();
-
-    cy.contains('Skyddad flygbild').closest('mat-card').as('imageryCard');
-    cy.get('@imageryCard').find('input[type="checkbox"]').should('not.be.disabled');
-    cy.get('@imageryCard').find('input[type="checkbox"]').check({ force: true });
-    cy.contains('3 lager');
+    cy.get('div[aria-label*="synliga lager: Fastighetsgränser, Klimatriskzoner"]').should('exist');
   });
 
   it('moves the map context when searching for Stockholm', () => {

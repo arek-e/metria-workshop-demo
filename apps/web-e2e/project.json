@@ -1,0 +1,29 @@
+{
+  "name": "web-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "root": "apps/web-e2e",
+  "sourceRoot": "apps/web-e2e/src",
+  "projectType": "application",
+  "implicitDependencies": ["web"],
+  "targets": {
+    "e2e": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ./scripts/run-e2e.mjs"
+      }
+    },
+    "open": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cypress open --config-file apps/web-e2e/cypress.config.ts"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"apps/web-e2e/**/*.ts\""
+      }
+    }
+  },
+  "tags": ["scope:web", "type:e2e"]
+}
