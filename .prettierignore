@@ -1,0 +1,9 @@
+.agents/
+.angular/
+.codex/
+.specify/
+AGENTS.md
+coverage/
+dist/
+node_modules/
+storybook-static/

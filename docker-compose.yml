@@ -1,0 +1,55 @@
+services:
+  app-postgres:
+    image: postgres:16-alpine
+    ports:
+      - '127.0.0.1:5433:5432'
+    environment:
+      POSTGRES_DB: metria_map
+      POSTGRES_USER: metria
+      POSTGRES_PASSWORD: metria
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U metria -d metria_map']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - app-postgres-data:/var/lib/postgresql/data
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U keycloak -d keycloak']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - keycloak-postgres-data:/var/lib/postgresql/data
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2.4
+    command: ['start-dev', '--import-realm', '--hostname=http://127.0.0.1:8080']
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:8080:8080'
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_PORT: '5432'
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KC_HEALTH_ENABLED: 'true'
+    volumes:
+      - ./docker/keycloak/metria-demo-realm.json:/opt/keycloak/data/import/metria-demo-realm.json:ro
+
+volumes:
+  app-postgres-data:
+  keycloak-postgres-data:

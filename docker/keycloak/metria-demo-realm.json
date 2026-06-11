@@ -1,0 +1,82 @@
+{
+  "realm": "metria-demo",
+  "enabled": true,
+  "displayName": "Metria Demo",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "roles": {
+    "realm": [
+      {
+        "name": "case-worker",
+        "description": "Can inspect cadastral and planning decision support."
+      },
+      {
+        "name": "exporter",
+        "description": "Can prepare export-ready decision material."
+      },
+      {
+        "name": "restricted-geodata",
+        "description": "Can access restricted geodata layers and planning lines."
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "metria-workbench",
+      "name": "Metria AI Quality Workbench",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "fullScopeAllowed": true,
+      "redirectUris": ["http://localhost:4200/*", "http://127.0.0.1:4200/*"],
+      "webOrigins": ["http://localhost:4200", "http://127.0.0.1:4200"],
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "demo",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Metria",
+      "lastName": "Demo",
+      "email": "demo@metria.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "demo",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["case-worker", "exporter", "restricted-geodata"]
+    },
+    {
+      "username": "cypress",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Metria",
+      "lastName": "Cypress",
+      "email": "cypress@metria.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "cypress",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["case-worker", "exporter", "restricted-geodata"]
+    }
+  ]
+}

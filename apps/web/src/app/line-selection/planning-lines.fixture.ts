@@ -1,0 +1,68 @@
+import { PlanningLine } from './line-selection.models';
+
+export const PLANNING_LINES: readonly PlanningLine[] = [
+  {
+    id: 'service-access',
+    title: 'Serviceväg',
+    summary: 'Föreslagen anslutning från lokalt vägnät in till fastigheten.',
+    category: 'Atkomst',
+    risk: 'medium',
+    lengthMeters: 620,
+    reviewPriority: 10,
+    restricted: false,
+    coordinates: [
+      [14.8897, 58.8822],
+      [14.8942, 58.8815],
+      [14.9008, 58.8804],
+      [14.9062, 58.8789],
+    ],
+  },
+  {
+    id: 'shoreline-setback',
+    title: 'Strandskyddslinje',
+    summary: 'Planeringslinje för granskning av vattennära exploatering.',
+    category: 'Strand',
+    risk: 'high',
+    lengthMeters: 840,
+    reviewPriority: 30,
+    restricted: false,
+    coordinates: [
+      [14.8912, 58.8758],
+      [14.8968, 58.8766],
+      [14.9038, 58.8774],
+      [14.911, 58.8782],
+    ],
+  },
+  {
+    id: 'utility-easement',
+    title: 'Ledningsrätt',
+    summary: 'Begränsat ledningsstråk som kräver utökad geodatabehörighet.',
+    category: 'Ledning',
+    risk: 'medium',
+    lengthMeters: 510,
+    reviewPriority: 20,
+    restricted: true,
+    requiredRole: 'restricted-geodata',
+    coordinates: [
+      [14.9022, 58.8836],
+      [14.9044, 58.8812],
+      [14.9071, 58.879],
+      [14.9094, 58.8768],
+    ],
+  },
+  {
+    id: 'flood-review',
+    title: 'Översvämningssektion',
+    summary: 'Tvärsektion för klimatriskgranskning över den lägre delen av fastigheten.',
+    category: 'Risk',
+    risk: 'high',
+    lengthMeters: 390,
+    reviewPriority: 40,
+    restricted: false,
+    coordinates: [
+      [14.8954, 58.8797],
+      [14.9012, 58.8787],
+      [14.9078, 58.8779],
+    ],
+  },
+];
