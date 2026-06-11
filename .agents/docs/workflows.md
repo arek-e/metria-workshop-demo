@@ -8,6 +8,7 @@ npm run dev
 ```
 
 Open `http://localhost:4200`. The Fastify API runs on `http://127.0.0.1:3000`.
+GraphQL is available at `http://127.0.0.1:3000/graphql`.
 
 ## Installed Agent Tooling
 
@@ -37,7 +38,7 @@ REFACTOR: clean up only after all tests are green
 Good first slice:
 
 ```sh
-npx vitest run --config apps/web/vitest.config.ts src/app/layer-decision-support/layer-access-policy.spec.ts
+npx vitest run --config apps/web/vitest.config.ts src/app/map-workbench/layers/layer-access-policy.spec.ts
 ```
 
 API slice:
@@ -61,7 +62,7 @@ npm run e2e
 ```
 
 `npm run e2e` goes through the `web-e2e` Nx project and uses `scripts/run-e2e.mjs` to start a
-temporary Angular dev server before running Cypress.
+temporary Fastify API plus a static web server for the built Angular app before running Cypress.
 
 ## Quality Gate
 

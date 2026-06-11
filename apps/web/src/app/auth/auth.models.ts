@@ -1,4 +1,4 @@
-import { UserRole } from '../layer-decision-support/layer-decision-support.models';
+import { UserRole } from '../shared/domain/user-role';
 
 export type AuthStatus = 'initializing' | 'authenticated' | 'anonymous' | 'error';
 

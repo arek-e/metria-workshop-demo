@@ -7,7 +7,7 @@ geodata decision-support workflow with production-style agent context, tests, an
 
 ```text
 apps/web      Angular 20 standalone map application
-apps/api      Fastify API service
+apps/api      Fastify + GraphQL API service
 apps/web-e2e  Cypress end-to-end suite for the web app
 ```
 
@@ -87,7 +87,12 @@ Available local endpoints:
 ```text
 GET /health
 GET /api/status
+POST /graphql
 ```
+
+GraphQL owns the workbench data boundary. The current schema exposes `status`,
+`mapWorkbench`, and `searchTargets(query:, limit:)`. The Angular app loads map layer metadata,
+default selected layers, searchable targets, and vector geometry through this API.
 
 Runtime configuration:
 
@@ -150,7 +155,7 @@ npm run services:down # Stop local Docker services
 npm run build         # Production build for Angular and API
 npm run lint          # ESLint
 npm run storybook     # Storybook
-npm run e2e           # Starts a temporary web server and runs Cypress through Nx
+npm run e2e           # Builds web, starts API + static web server, and runs Cypress through Nx
 npm run quality       # Format check, lint, tests, build, and Cypress e2e
 npm run keycloak:up   # Alias for npm run services
 npm run keycloak:down # Alias for npm run services:down
@@ -168,13 +173,17 @@ The active feature is a layer decision-support panel:
 The main public behavior lives in:
 
 ```text
-apps/web/src/app/layer-decision-support/layer-access-policy.ts
+apps/web/src/app/map-workbench/layers/layer-access-policy.ts
+apps/web/src/app/map-workbench/workbench-data/map-workbench-api.ts
+apps/api/src/domains/geodata/
 ```
 
 The tests show the workshop's preferred TDD style:
 
 ```text
-apps/web/src/app/layer-decision-support/layer-access-policy.spec.ts
+apps/web/src/app/map-workbench/layers/layer-access-policy.spec.ts
+apps/web/src/app/map-workbench/workbench-data/map-workbench-api.spec.ts
+apps/api/src/server.spec.ts
 ```
 
 ## Agent Context
@@ -197,6 +206,6 @@ workflow assets in `.agents/` and `.specify/`.
 ## Dependency Notes
 
 Runtime dependencies are intentionally limited to what the current implementation imports:
-Angular, Angular Material/CDK, OpenLayers, Keycloak, Fastify, local fonts/icons, RxJS, and
-runtime helpers. Add GIS analysis, export, realtime, chart, or grid libraries only with the
-vertical feature that uses them.
+Angular, Angular Material/CDK, OpenLayers, Keycloak, Fastify, Mercurius/GraphQL, local
+fonts/icons, RxJS, and runtime helpers. Add GIS analysis, export, realtime, chart, or grid
+libraries only with the vertical feature that uses them.

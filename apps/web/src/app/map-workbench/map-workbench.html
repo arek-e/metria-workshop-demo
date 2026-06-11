@@ -207,6 +207,16 @@
         >
           <mat-icon fontSet="material-symbols-rounded">person_alert</mat-icon>
         </button>
+      } @else if (authState().status === 'anonymous') {
+        <button
+          class="user-avatar"
+          type="button"
+          aria-label="Logga in"
+          matTooltip="Logga in"
+          (click)="login()"
+        >
+          <mat-icon fontSet="material-symbols-rounded">login</mat-icon>
+        </button>
       } @else {
         <button
           class="user-avatar user-avatar--pending"

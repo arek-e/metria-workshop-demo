@@ -1,15 +1,12 @@
 import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
 
+import { geodataGraphqlPlugin } from './domains/geodata/geodata.plugin';
+import { ApiStatusResponse, buildStatusResponse } from './domains/system/status';
+
 export interface BuildServerOptions {
   readonly logger?: boolean;
   readonly corsOrigin?: boolean | string | RegExp | Array<string | RegExp>;
-}
-
-export interface ApiStatusResponse {
-  readonly status: 'ok';
-  readonly service: 'metria-api';
-  readonly version: string;
 }
 
 export async function buildServer(options: BuildServerOptions = {}): Promise<FastifyInstance> {
@@ -23,14 +20,7 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
 
   server.get('/health', async (): Promise<ApiStatusResponse> => buildStatusResponse());
   server.get('/api/status', async (): Promise<ApiStatusResponse> => buildStatusResponse());
+  await server.register(geodataGraphqlPlugin);
 
   return server;
-}
-
-function buildStatusResponse(): ApiStatusResponse {
-  return {
-    status: 'ok',
-    service: 'metria-api',
-    version: process.env['npm_package_version'] ?? '0.0.0',
-  };
 }

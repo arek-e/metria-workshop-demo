@@ -1,4 +1,6 @@
-export type UserRole = 'case-worker' | 'restricted-geodata' | 'exporter';
+import { UserRole } from '../../shared/domain/user-role';
+
+export type { UserRole };
 
 export interface DecisionLayer {
   id: string;

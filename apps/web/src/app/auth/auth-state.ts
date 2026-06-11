@@ -1,6 +1,6 @@
 import type { KeycloakProfile, KeycloakTokenParsed } from 'keycloak-js';
 
-import { UserRole } from '../layer-decision-support/layer-decision-support.models';
+import { UserRole } from '../shared/domain/user-role';
 import { AuthState, AuthUser } from './auth.models';
 
 export const AUTH_INITIAL_STATE: AuthState = {

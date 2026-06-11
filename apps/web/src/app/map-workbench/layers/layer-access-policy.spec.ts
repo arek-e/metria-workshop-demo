@@ -1,10 +1,32 @@
-import { LAYER_CATALOG } from './layer-catalog.fixture';
 import { buildLayerDecisionView, nextSelectedLayerIds } from './layer-access-policy';
+import { DecisionLayer } from './layer-decision.models';
+
+const layerCatalog: readonly DecisionLayer[] = [
+  {
+    id: 'property-boundaries',
+    title: 'Fastighetsgränser',
+    renderOrder: 10,
+    restricted: false,
+  },
+  {
+    id: 'protected-imagery',
+    title: 'Skyddad flygbild',
+    renderOrder: 20,
+    restricted: true,
+    requiredRole: 'restricted-geodata',
+  },
+  {
+    id: 'climate-risk',
+    title: 'Klimatriskzoner',
+    renderOrder: 30,
+    restricted: false,
+  },
+];
 
 describe('layer decision support policy', () => {
   it('blocks restricted layers when the user lacks the required role', () => {
     const view = buildLayerDecisionView({
-      layers: LAYER_CATALOG,
+      layers: layerCatalog,
       selectedLayerIds: ['protected-imagery'],
       roles: ['case-worker', 'exporter'],
     });
@@ -19,7 +41,7 @@ describe('layer decision support policy', () => {
 
   it('keeps selected layers in map render order instead of click order', () => {
     const view = buildLayerDecisionView({
-      layers: LAYER_CATALOG,
+      layers: layerCatalog,
       selectedLayerIds: ['climate-risk', 'property-boundaries', 'protected-imagery'],
       roles: ['case-worker', 'restricted-geodata', 'exporter'],
     });
@@ -34,7 +56,7 @@ describe('layer decision support policy', () => {
   it('does not toggle unavailable layers through the public selection interface', () => {
     const selectedIds = nextSelectedLayerIds(
       {
-        layers: LAYER_CATALOG,
+        layers: layerCatalog,
         selectedLayerIds: ['property-boundaries'],
         roles: ['case-worker', 'exporter'],
       },

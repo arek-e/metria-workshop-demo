@@ -6,8 +6,8 @@ real geospatial product surface.
 ## Commands
 
 ```sh
-npx vitest run --config apps/web/vitest.config.ts src/app/location-search/location-search-policy.spec.ts
-npx vitest run --config apps/web/vitest.config.ts src/app/layer-decision-support/layer-access-policy.spec.ts
+npx vitest run --config apps/web/vitest.config.ts src/app/map-workbench/search/location-search-policy.spec.ts
+npx vitest run --config apps/web/vitest.config.ts src/app/map-workbench/layers/layer-access-policy.spec.ts
 npx vitest run --config apps/web/vitest.config.ts src/app/app.spec.ts
 npm run build
 ```
@@ -16,13 +16,13 @@ npm run build
 
 - `app.ts`, `app.html`, `app.scss` - thin root shell for the map workbench feature.
 - `map-workbench/` - map shell, OpenLayers orchestration, search UI, layer controls, auth/account UI, and responsive overlay styling.
+- `map-workbench/layers/` - layer availability policy, selected layer normalization, and render ordering.
+- `map-workbench/search/` - search target models and coordinate formatting for selected locations.
+- `map-workbench/workbench-data/` - GraphQL-backed workbench data adapter and API response models.
 - `app.spec.ts` - component behavior smoke test through Testing Library.
 - `app.stories.ts` - Storybook states for visual review.
-- `location-search/` - public search policy, local Swedish search targets, and coordinate formatting.
-- `layer-decision-support/layer-access-policy.ts` - domain module for layer availability, selected layers, and stable render ordering.
-- `layer-decision-support/layer-access-policy.spec.ts` - public-interface tests for layer policy behavior.
-- `layer-decision-support/layer-catalog.fixture.ts` - deterministic seed data for map layers.
 - `auth/` - Keycloak startup, login/logout, token role extraction, and app role mapping.
+- `shared/` - cross-feature API and authorization contracts.
 
 ## Map Patterns
 
@@ -43,7 +43,7 @@ npm run build
 
 ## Testing Patterns
 
-- Search behavior: test through `findLocalSearchTarget`, coordinate formatting, and visible component outcomes.
+- Search behavior: test through coordinate formatting, backend-backed API responses, and visible component outcomes.
 - Layer behavior: call public functions such as `buildLayerDecisionView` and `nextSelectedLayerIds`.
 - Component behavior: render with Testing Library and assert visible output/interactions.
 - E2E behavior: use Cypress for search, layer toggles, restricted geodata disabled state, account UI, and viewport fit.

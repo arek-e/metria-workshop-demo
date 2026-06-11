@@ -33,65 +33,22 @@ import { fromLonLat } from 'ol/proj.js';
 import OSM from 'ol/source/OSM.js';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, Stroke, Style } from 'ol/style.js';
+import { firstValueFrom } from 'rxjs';
 
 import { AuthStore } from '../auth/auth.store';
-import {
-  buildLayerDecisionView,
-  nextSelectedLayerIds,
-} from '../layer-decision-support/layer-access-policy';
-import { LAYER_CATALOG } from '../layer-decision-support/layer-catalog.fixture';
-import {
-  UserRole,
-  LayerDecisionInput,
-} from '../layer-decision-support/layer-decision-support.models';
-import {
-  findLocalSearchTarget,
-  formatTargetCoordinates,
-} from '../location-search/location-search-policy';
-import { SearchTarget } from '../location-search/location-search.models';
-
-const MAP_CENTER_LON_LAT: [number, number] = [17.99449, 59.42447];
-const PROPERTY_POLYGON_LON_LAT: readonly [number, number][] = [
-  [17.9936, 59.4249],
-  [17.9947, 59.4251],
-  [17.9954, 59.4245],
-  [17.9948, 59.4239],
-  [17.9935, 59.424],
-  [17.9936, 59.4249],
-];
-const CLIMATE_RISK_ZONE_LON_LAT: readonly [number, number][] = [
-  [17.9899, 59.4259],
-  [17.9962, 59.4263],
-  [17.9991, 59.4237],
-  [17.9951, 59.4224],
-  [17.9902, 59.4233],
-  [17.9899, 59.4259],
-];
-const FLOOD_SECTION_LON_LAT: readonly [number, number][] = [
-  [17.9887, 59.4232],
-  [17.9935, 59.4228],
-  [18, 59.4223],
-  [17.9996, 59.4216],
-  [17.9931, 59.4221],
-  [17.9885, 59.4225],
-  [17.9887, 59.4232],
-];
-const PROTECTED_IMAGERY_EXTENT_LON_LAT: readonly [number, number][] = [
-  [17.9876, 59.4267],
-  [18.0031, 59.4259],
-  [18.0018, 59.4201],
-  [17.9863, 59.4209],
-  [17.9876, 59.4267],
-];
-const UTILITY_CORRIDOR_LON_LAT: readonly [number, number][] = [
-  [17.9879, 59.4268],
-  [17.9921, 59.4252],
-  [17.9961, 59.4237],
-  [18.0017, 59.4214],
-];
+import { MapWorkbenchApi } from './workbench-data/map-workbench-api';
+import { buildLayerDecisionView, nextSelectedLayerIds } from './layers/layer-access-policy';
+import { DecisionLayer, LayerDecisionInput, UserRole } from './layers/layer-decision.models';
+import { formatTargetCoordinates } from './search/location-search-policy';
+import { SearchTarget } from './search/location-search.models';
+import { MapFeature } from './workbench-data/map-workbench.models';
 
 type SearchMode = 'property' | 'address' | 'place' | 'planning-unit';
 type MapLayerFeature = Feature<Geometry>;
+type LonLatPair = [number, number];
+type SearchStatus = 'idle' | 'searching' | 'found' | 'not-found' | 'error';
+
+const FALLBACK_MAP_CENTER_LON_LAT: LonLatPair = [17.99449, 59.42447];
 
 @Component({
   selector: 'app-map-workbench',
@@ -114,6 +71,7 @@ export class MapWorkbench implements AfterViewInit, OnDestroy {
   @ViewChild('mapContainer') private readonly mapContainer?: ElementRef<HTMLDivElement>;
 
   private readonly authStore = inject(AuthStore);
+  private readonly mapWorkbenchApi = inject(MapWorkbenchApi);
 
   protected readonly authState = toSignal(this.authStore.state$, {
     initialValue: this.authStore.snapshot,
@@ -138,25 +96,20 @@ export class MapWorkbench implements AfterViewInit, OnDestroy {
       ? `OpenLayers-karta med synliga lager: ${visibleLayerTitles.join(', ')}`
       : 'OpenLayers-karta utan aktiva geodatalager';
   });
-  protected readonly selectedLayerIds = signal<readonly string[]>([
-    'property-boundaries',
-    'climate-risk',
-  ]);
+  protected readonly selectedLayerIds = signal<readonly string[]>([]);
   protected readonly searchMode = signal<SearchMode>('property');
-  protected readonly searchQuery = signal('SOLLENTUNA SJÖBERG 5:5');
-  protected readonly searchStatus = signal<'idle' | 'searching' | 'found' | 'not-found' | 'error'>(
-    'idle',
-  );
-  protected readonly searchMessage = signal('Vald fastighet');
-  protected readonly layerCatalog = LAYER_CATALOG;
+  protected readonly searchQuery = signal('');
+  protected readonly searchStatus = signal<SearchStatus>('searching');
+  protected readonly searchMessage = signal('Hämtar kartdata från backend...');
+  protected readonly layerCatalog = signal<readonly DecisionLayer[]>([]);
   protected readonly selectedProperty = signal({
-    name: 'SOLLENTUNA SJÖBERG 5:5',
-    type: 'Fastighet',
-    coordinates: 'Sjöberg, Sollentuna · Riktnummer 08 · N 59.4245, E 17.9945 WGS84',
+    name: 'Läser kartdata',
+    type: 'Status',
+    coordinates: 'Väntar på GraphQL-svar från backend',
   });
   protected readonly view = computed(() =>
     buildLayerDecisionView({
-      layers: this.layerCatalog,
+      layers: this.layerCatalog(),
       selectedLayerIds: this.selectedLayerIds(),
       roles: this.roles(),
     }),
@@ -164,10 +117,16 @@ export class MapWorkbench implements AfterViewInit, OnDestroy {
 
   private map?: OlMap;
   private layerSource?: VectorSource<MapLayerFeature>;
+  private readonly mapFeatures = signal<readonly MapFeature[]>([]);
+  private readonly defaultSearchTarget = signal<SearchTarget | undefined>(undefined);
 
   private readonly layerSync = effect(() => {
     this.syncVisibleMapLayers(this.view().visibleLayerIds);
   });
+
+  constructor() {
+    void this.loadWorkbench();
+  }
 
   ngAfterViewInit(): void {
     const target = this.mapContainer?.nativeElement;
@@ -206,14 +165,19 @@ export class MapWorkbench implements AfterViewInit, OnDestroy {
     this.searchStatus.set('searching');
     this.searchMessage.set('Söker...');
 
-    const target = findLocalSearchTarget(query) ?? (await this.findRemoteSearchTarget(query));
-    if (!target) {
-      this.searchStatus.set('not-found');
-      this.searchMessage.set('Ingen träff i Sverige');
-      return;
-    }
+    try {
+      const [target] = await firstValueFrom(this.mapWorkbenchApi.searchTargets(query, 1));
+      if (!target) {
+        this.searchStatus.set('not-found');
+        this.searchMessage.set('Ingen träff i Sverige');
+        return;
+      }
 
-    this.applySearchTarget(target);
+      this.applySearchTarget(target);
+    } catch {
+      this.searchStatus.set('error');
+      this.searchMessage.set('Sökningen kunde inte nå backend');
+    }
   }
 
   protected clearSearch(): void {
@@ -244,16 +208,36 @@ export class MapWorkbench implements AfterViewInit, OnDestroy {
   }
 
   protected goToProperty(): void {
+    const target = this.defaultSearchTarget();
     this.map?.getView().animate({
-      center: fromLonLat(MAP_CENTER_LON_LAT),
-      zoom: 15,
+      center: fromLonLat(target ? lonLatPairFor(target) : FALLBACK_MAP_CENTER_LON_LAT),
+      zoom: target?.zoom ?? 15,
       duration: 240,
     });
   }
 
+  private async loadWorkbench(): Promise<void> {
+    try {
+      const workbench = await firstValueFrom(this.mapWorkbenchApi.loadWorkbench());
+
+      this.layerCatalog.set(workbench.layers);
+      this.mapFeatures.set(workbench.features);
+      this.selectedLayerIds.set(workbench.defaultSelectedLayerIds);
+      this.defaultSearchTarget.set(workbench.defaultSearchTarget);
+      this.applySearchTarget(workbench.defaultSearchTarget, {
+        animate: false,
+        message: 'Vald fastighet',
+      });
+      this.syncVisibleMapLayers(this.view().visibleLayerIds);
+    } catch {
+      this.searchStatus.set('error');
+      this.searchMessage.set('Kunde inte hämta kartdata från backend');
+    }
+  }
+
   private currentInput(): LayerDecisionInput {
     return {
-      layers: this.layerCatalog,
+      layers: this.layerCatalog(),
       selectedLayerIds: this.selectedLayerIds(),
       roles: this.roles(),
     };
@@ -265,6 +249,8 @@ export class MapWorkbench implements AfterViewInit, OnDestroy {
 
   private initializeMap(target: HTMLDivElement): void {
     const vectorSource = new VectorSource<MapLayerFeature>();
+    const defaultTarget = this.defaultSearchTarget();
+
     this.layerSource = vectorSource;
     this.syncVisibleMapLayers(this.view().visibleLayerIds);
 
@@ -286,7 +272,9 @@ export class MapWorkbench implements AfterViewInit, OnDestroy {
         }),
       ],
       view: new View({
-        center: fromLonLat(MAP_CENTER_LON_LAT),
+        center: fromLonLat(
+          defaultTarget ? lonLatPairFor(defaultTarget) : FALLBACK_MAP_CENTER_LON_LAT,
+        ),
         zoom: 15,
         minZoom: 11,
         maxZoom: 19,
@@ -296,7 +284,10 @@ export class MapWorkbench implements AfterViewInit, OnDestroy {
     queueMicrotask(() => this.map?.updateSize());
   }
 
-  private applySearchTarget(target: SearchTarget): void {
+  private applySearchTarget(
+    target: SearchTarget,
+    options: { readonly animate?: boolean; readonly message?: string } = {},
+  ): void {
     this.selectedProperty.set({
       name: target.label,
       type: this.displayTargetKind(target),
@@ -305,53 +296,16 @@ export class MapWorkbench implements AfterViewInit, OnDestroy {
     this.searchQuery.set(target.label);
     this.searchMode.set(this.searchModeForTarget(target));
     this.searchStatus.set('found');
-    this.searchMessage.set(target.source === 'local' ? 'Träff vald' : 'Extern träff vald');
-    this.map?.getView().animate({
-      center: fromLonLat([target.lonLat[0], target.lonLat[1]]),
-      zoom: target.zoom,
-      duration: 320,
-    });
-  }
+    this.searchMessage.set(
+      options.message ?? (target.source === 'local' ? 'Träff vald' : 'Extern träff vald'),
+    );
 
-  private async findRemoteSearchTarget(query: string): Promise<SearchTarget | undefined> {
-    try {
-      const params = new URLSearchParams({
-        q: query,
-        format: 'jsonv2',
-        countrycodes: 'se',
-        limit: '1',
+    if (options.animate !== false) {
+      this.map?.getView().animate({
+        center: fromLonLat(lonLatPairFor(target)),
+        zoom: target.zoom,
+        duration: 320,
       });
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?${params}`);
-      if (!response.ok) {
-        return undefined;
-      }
-
-      const results = (await response.json()) as readonly {
-        display_name?: string;
-        lat?: string;
-        lon?: string;
-        type?: string;
-      }[];
-      const result = results[0];
-      const lat = result?.lat ? Number(result.lat) : Number.NaN;
-      const lon = result?.lon ? Number(result.lon) : Number.NaN;
-
-      if (!result || !Number.isFinite(lat) || !Number.isFinite(lon)) {
-        return undefined;
-      }
-
-      return {
-        id: `nominatim-${query}`,
-        label: result.display_name?.split(',')[0] ?? query,
-        kind: result.type === 'house' ? 'address' : 'place',
-        lonLat: [lon, lat],
-        zoom: result.type === 'house' ? 17 : 12,
-        source: 'nominatim',
-      };
-    } catch {
-      this.searchStatus.set('error');
-      this.searchMessage.set('Sökningen kunde inte nå extern geokodning');
-      return undefined;
     }
   }
 
@@ -379,27 +333,6 @@ export class MapWorkbench implements AfterViewInit, OnDestroy {
     return 'place';
   }
 
-  private buildPropertyFeature(): Feature<Polygon> {
-    const feature = new Feature({
-      geometry: new Polygon([PROPERTY_POLYGON_LON_LAT.map((coordinate) => fromLonLat(coordinate))]),
-    });
-
-    feature.setStyle(
-      new Style({
-        fill: new Fill({
-          color: 'rgba(255, 255, 255, 0.38)',
-        }),
-        stroke: new Stroke({
-          color: '#d93b3b',
-          width: 4,
-          lineDash: [14, 9],
-        }),
-      }),
-    );
-
-    return feature;
-  }
-
   private syncVisibleMapLayers(visibleLayerIds: readonly string[]): void {
     if (!this.layerSource) {
       return;
@@ -412,33 +345,42 @@ export class MapWorkbench implements AfterViewInit, OnDestroy {
   }
 
   private buildMapLayerFeatures(layerId: string): readonly MapLayerFeature[] {
-    if (layerId === 'property-boundaries') {
-      return [this.buildPropertyFeature()];
-    }
-
-    if (layerId === 'climate-risk') {
-      return this.buildClimateRiskFeatures();
-    }
-
-    if (layerId === 'protected-imagery') {
-      return [this.buildProtectedImageryFeature()];
-    }
-
-    if (layerId === 'utility-corridors') {
-      return [this.buildUtilityCorridorFeature()];
-    }
-
-    return [];
+    return this.mapFeatures()
+      .filter((feature) => feature.layerId === layerId)
+      .map((feature) => this.buildMapFeature(feature));
   }
 
-  private buildClimateRiskFeatures(): readonly MapLayerFeature[] {
-    const heatFeature = new Feature({
-      geometry: new Polygon([
-        CLIMATE_RISK_ZONE_LON_LAT.map((coordinate) => fromLonLat(coordinate)),
-      ]),
-    });
-    heatFeature.setStyle(
-      new Style({
+  private buildMapFeature(sourceFeature: MapFeature): MapLayerFeature {
+    const coordinates = sourceFeature.coordinates.map((coordinate) =>
+      fromLonLat([coordinate.lon, coordinate.lat]),
+    );
+    const geometry =
+      sourceFeature.geometryType === 'line-string'
+        ? new LineString(coordinates)
+        : new Polygon([coordinates]);
+    const feature = new Feature({ geometry });
+
+    feature.setStyle(this.styleForFeature(sourceFeature));
+
+    return feature;
+  }
+
+  private styleForFeature(feature: MapFeature): Style | Style[] {
+    if (feature.id === 'property-boundary') {
+      return new Style({
+        fill: new Fill({
+          color: 'rgba(255, 255, 255, 0.38)',
+        }),
+        stroke: new Stroke({
+          color: '#d93b3b',
+          width: 4,
+          lineDash: [14, 9],
+        }),
+      });
+    }
+
+    if (feature.id === 'climate-risk-heat') {
+      return new Style({
         fill: new Fill({
           color: 'rgba(217, 59, 59, 0.22)',
         }),
@@ -448,14 +390,11 @@ export class MapWorkbench implements AfterViewInit, OnDestroy {
           width: 3,
         }),
         zIndex: 20,
-      }),
-    );
+      });
+    }
 
-    const floodFeature = new Feature({
-      geometry: new Polygon([FLOOD_SECTION_LON_LAT.map((coordinate) => fromLonLat(coordinate))]),
-    });
-    floodFeature.setStyle(
-      new Style({
+    if (feature.id === 'climate-risk-flood') {
+      return new Style({
         fill: new Fill({
           color: 'rgba(47, 109, 147, 0.28)',
         }),
@@ -464,21 +403,11 @@ export class MapWorkbench implements AfterViewInit, OnDestroy {
           width: 3,
         }),
         zIndex: 21,
-      }),
-    );
+      });
+    }
 
-    return [heatFeature, floodFeature];
-  }
-
-  private buildProtectedImageryFeature(): MapLayerFeature {
-    const feature = new Feature({
-      geometry: new Polygon([
-        PROTECTED_IMAGERY_EXTENT_LON_LAT.map((coordinate) => fromLonLat(coordinate)),
-      ]),
-    });
-
-    feature.setStyle(
-      new Style({
+    if (feature.id === 'protected-imagery-extent') {
+      return new Style({
         fill: new Fill({
           color: 'rgba(41, 49, 45, 0.24)',
         }),
@@ -488,38 +417,35 @@ export class MapWorkbench implements AfterViewInit, OnDestroy {
           width: 3,
         }),
         zIndex: 10,
+      });
+    }
+
+    if (feature.id === 'utility-corridor') {
+      return [
+        new Style({
+          stroke: new Stroke({
+            color: 'rgba(255, 255, 255, 0.88)',
+            width: 9,
+          }),
+          zIndex: 30,
+        }),
+        new Style({
+          stroke: new Stroke({
+            color: '#8c491a',
+            lineDash: [14, 8],
+            width: 5,
+          }),
+          zIndex: 31,
+        }),
+      ];
+    }
+
+    return new Style({
+      stroke: new Stroke({
+        color: '#44504b',
+        width: 3,
       }),
-    );
-
-    return feature;
-  }
-
-  private buildUtilityCorridorFeature(): MapLayerFeature {
-    const feature = new Feature({
-      geometry: new LineString(
-        UTILITY_CORRIDOR_LON_LAT.map((coordinate) => fromLonLat(coordinate)),
-      ),
     });
-
-    feature.setStyle([
-      new Style({
-        stroke: new Stroke({
-          color: 'rgba(255, 255, 255, 0.88)',
-          width: 9,
-        }),
-        zIndex: 30,
-      }),
-      new Style({
-        stroke: new Stroke({
-          color: '#8c491a',
-          lineDash: [14, 8],
-          width: 5,
-        }),
-        zIndex: 31,
-      }),
-    ]);
-
-    return feature;
   }
 }
 
@@ -535,4 +461,8 @@ function initialsFor(name: string): string {
     .map((part) => part[0])
     .join('')
     .toUpperCase();
+}
+
+function lonLatPairFor(target: SearchTarget): LonLatPair {
+  return [target.lonLat.lon, target.lonLat.lat];
 }

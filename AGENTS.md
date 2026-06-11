@@ -9,10 +9,13 @@ handling restricted map data, and preparing decision-support exports.
 - `apps/web/src/app/` - Angular 20 standalone map app and package-level `AGENTS.md`.
 - `apps/web/src/app/app.ts` - thin root component that renders the map workbench feature.
 - `apps/web/src/app/map-workbench/` - OpenLayers map setup, search flow, auth-aware layer state, account control, layer controls, and responsive overlay styling.
-- `apps/web/src/app/location-search/` - public search policy and local Swedish search fixtures.
-- `apps/web/src/app/layer-decision-support/` - domain module for layer access, selected state, and stable render ordering.
+- `apps/web/src/app/map-workbench/layers/` - domain module for layer access, selected state, and stable render ordering.
+- `apps/web/src/app/map-workbench/search/` - search target models and selected-coordinate formatting.
+- `apps/web/src/app/map-workbench/workbench-data/` - GraphQL-backed frontend data adapter for workbench catalog/search/geometry.
 - `apps/web/src/app/auth/` - Keycloak/OIDC integration and role mapping.
-- `apps/api/` - Fastify API shell with health/status endpoints.
+- `apps/web/src/app/shared/` - cross-feature API and authorization contracts.
+- `apps/api/src/domains/geodata/` - Fastify/Mercurius GraphQL domain for workbench catalog, search targets, and map feature geometry.
+- `apps/api/src/domains/system/` - system status contract shared by REST health and GraphQL status.
 - `apps/web-e2e/` - Cypress tests for map search, layer selection, responsive overlay behavior, and current account UI.
 - `docker/keycloak/` and `scripts/` - local Keycloak realm and seed tooling.
 - `.agents/docs/` - deeper docs loaded on demand; start with `.agents/docs/index.md`.
@@ -31,7 +34,7 @@ npm run build          # Production build
 npm run lint           # ESLint
 npm run format:check   # Prettier check
 npm run storybook      # Storybook on http://localhost:6006
-npm run e2e            # Starts a web dev server, runs Cypress, then stops it
+npm run e2e            # Builds web, starts API + static web server, runs Cypress, then stops them
 npm run quality        # Format, lint, tests, build, Cypress
 ```
 
@@ -41,7 +44,7 @@ npm run quality        # Format, lint, tests, build, Cypress
 - Map/GIS: OpenLayers (`ol`) for map rendering, `fromLonLat`/projection handling, vector features, tile layers, and map controls.
 - Data/state: Angular signals/computed values and RxJS for service state.
 - Auth: Keycloak, `keycloak-js`, role mapping into app-level geodata permissions.
-- API: Fastify with explicit health/status endpoints.
+- API: Fastify with explicit health/status endpoints and Mercurius GraphQL at `/graphql`.
 - Quality: Vitest, Cypress, Storybook, ESLint, Prettier, Husky, semantic-release.
 
 ## Product Rules

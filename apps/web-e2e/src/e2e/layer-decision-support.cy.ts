@@ -34,13 +34,13 @@ describe('layer decision support', () => {
     cy.contains('Planlinjer').should('not.exist');
   };
 
-  it('renders the current account avatar without the removed permission button', () => {
+  it('renders the anonymous login action without the removed permission button', () => {
     visitWorkbench();
 
     cy.get('div[aria-label="Användarkonto"]')
-      .find('button[aria-label="Autentiserar"]')
+      .find('button[aria-label="Logga in"]')
       .should('be.visible')
-      .and('be.disabled');
+      .and('not.be.disabled');
     cy.contains('button', 'Behörighet').should('not.exist');
   });
 

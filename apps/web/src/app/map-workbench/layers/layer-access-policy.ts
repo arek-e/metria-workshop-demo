@@ -4,7 +4,7 @@ import {
   LayerDecision,
   LayerDecisionInput,
   LayerDecisionView,
-} from './layer-decision-support.models';
+} from './layer-decision.models';
 
 export function buildLayerDecisionView(input: LayerDecisionInput): LayerDecisionView {
   const roleSet = new Set<UserRole>(input.roles);
